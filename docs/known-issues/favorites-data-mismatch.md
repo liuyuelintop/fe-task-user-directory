@@ -2,7 +2,7 @@
 
 Summary: Favorites persist in `localStorage`, but the user dataset fetched from `randomuser.me` changes over time, causing favorites to reference users that are not present in the current dataset.
 
-Tutorial context: This arose during the speed build flow in [SPEED_TUTORIAL.md](../../SPEED_TUTORIAL.md) — specifically Step 5 (API fetch), Step 6 (React Query), and Step 14 (Favorites).
+Tutorial context: This arose during the speed build flow in [SPEED_TUTORIAL.md](../tutorials/SPEED_TUTORIAL.md) — specifically Step 5 (API fetch), Step 6 (React Query), and Step 14 (Favorites).
 
 Impact
 - Favorites badge may show a count that doesn’t match visible favorites.
@@ -26,7 +26,7 @@ Contributing Factors
 - Defaults in React Query optimize freshness over stability in demos.
 
 Reflection (from the speed build)
-- Context: The tutorial prioritizes speed — get working UI quickly, inline transforms, and default settings (see [SPEED_TUTORIAL.md](../../SPEED_TUTORIAL.md)).
+- Context: The tutorial prioritizes speed — get working UI quickly, inline transforms, and default settings (see [SPEED_TUTORIAL.md](../tutorials/SPEED_TUTORIAL.md)).
 - Why it happened: Non-deterministic data + default refetch + persistent favorites = cross-boundary mismatch.
 - Speed tradeoffs: Used defaults (no seed, default React Query) and added persistence without aligning it to server data lifecycle.
 - Lessons:

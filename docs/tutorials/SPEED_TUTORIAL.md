@@ -383,9 +383,7 @@ export function UserDirectory() {
       {filteredUsers.length === 0 && (
         <div className="text-center py-12">
           <p className="text-xl text-gray-600 mb-2">No users found</p>
-          <p className="text-gray-500">
-            Try adjusting your search or filter criteria
-          </p>
+          <p className="text-gray-500">Try adjusting your search or filter criteria</p>
           <button
             onClick={() => {
               setSearchTerm('');
@@ -662,162 +660,49 @@ export function UserCard({ user, isFavorite, onToggleFavorite }: UserCardProps) 
 
 ---
 
-## Step 16: Update UserDirectory with Favorites
+## Step 16: Add Tabs and Wire Favorites
 
 Edit `components/UserDirectory.tsx`
 
-**Add this import at the top:**
+Add favorites state and filters and wire to `UserCard`.
 
 ```typescript
 import { useFavorites } from '@/hooks/useFavorites';
-```
 
-**Add this inside the component (after useUsers):**
-
-```typescript
+// inside component
 const { favoriteIds, toggleFavorite, isFavorite } = useFavorites();
 const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
+
+// intersection-based favorites count
+const visibleFavoritesCount = useMemo(() => {
+  if (!users) return 0;
+  const visible = new Set(users.map(u => u.id));
+  return favoriteIds.filter(id => visible.has(id)).length;
+}, [users, favoriteIds]);
+
+// in filter pipeline
+if (activeTab === 'favorites') {
+  result = result.filter(user => favoriteIds.includes(user.id));
+}
+
+// in render for tabs
+<button>Favorites ({visibleFavoritesCount})</button>
+
+// in card mapping
+<UserCard user={user} isFavorite={isFavorite(user.id)} onToggleFavorite={toggleFavorite} />
 ```
 
-**Update the filteredUsers useMemo to include tab filtering:**
-
-```typescript
-const filteredUsers = useMemo(() => {
-  if (!users) return [];
-
-  let result = users;
-
-  // Filter by tab
-  if (activeTab === 'favorites') {
-    result = result.filter(user => favoriteIds.includes(user.id));
-  }
-
-  // Filter by search and nationality
-  return result.filter(user => {
-    const matchesSearch = user.name.full
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-
-    const matchesNationality =
-      selectedNationality === 'all' ||
-      user.nationality === selectedNationality;
-
-    return matchesSearch && matchesNationality;
-  });
-}, [users, searchTerm, selectedNationality, activeTab, favoriteIds]);
-```
-
-**Add tab navigation BEFORE the filters section:**
-
-```typescript
-{/* Tab Navigation */}
-<div className="mb-6 flex gap-4">
-  <button
-    onClick={() => setActiveTab('all')}
-    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-      activeTab === 'all'
-        ? 'bg-blue-500 text-white'
-        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-    }`}
-  >
-    All Users ({users?.length || 0})
-  </button>
-  <button
-    onClick={() => setActiveTab('favorites')}
-    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-      activeTab === 'favorites'
-        ? 'bg-blue-500 text-white'
-        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-    }`}
-  >
-    Favorites ({favoriteIds.length})
-  </button>
-</div>
-```
-
-**Update the UserCard usage to pass favorite props:**
-
-```typescript
-{filteredUsers.map(user => (
-  <UserCard
-    key={user.id}
-    user={user}
-    isFavorite={isFavorite(user.id)}
-    onToggleFavorite={toggleFavorite}
-  />
-))}
-```
-
-**Update the empty state to be tab-aware:**
-
-```typescript
-{filteredUsers.length === 0 && (
-  <div className="text-center py-12">
-    <p className="text-xl text-gray-600 mb-2">
-      {activeTab === 'favorites'
-        ? 'No favorites yet'
-        : 'No users found'}
-    </p>
-    <p className="text-gray-500">
-      {activeTab === 'favorites'
-        ? 'Click the heart icon on user cards to add favorites'
-        : 'Try adjusting your search or filter criteria'}
-    </p>
-    {activeTab === 'all' && (
-      <button
-        onClick={() => {
-          setSearchTerm('');
-          setSelectedNationality('all');
-        }}
-        className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-      >
-        Clear Filters
-      </button>
-    )}
-  </div>
-)}
-```
-
-**What to say:**
-> "Adding favorites with localStorage persistence. The useFavorites hook manages both the state and localStorage sync. In production I'd add validation and handle QuotaExceeded errors."
-
-**✓ Checkpoint:** Favorites working and persisting on refresh
+**Favorites stability tip:**
+- Persisting favorites across sessions means your client state must align with server data lifecycles.
+- Use deterministic server data (seeded API) and a stable identifier (`login.uuid`).
+- Compute the favorites badge/count as the intersection of stored favorite IDs and the currently loaded users to avoid mismatch.
+- Provide a visible `Refresh` action (manual `refetch`) if you want controlled updates without surprise refetches.
 
 ---
 
-# Phase 4: Final Review (50-60 min)
+## Step 17: Add Favorites Tab UI
 
-## Step 17: Manual Test - Final Check
-
-Test these scenarios:
-
-**Core Functionality:**
-- [ ] Search by name works (case-insensitive)
-- [ ] Filter by nationality works
-- [ ] Search + filter together works (AND logic)
-- [ ] Results count is accurate
-- [ ] "No users found" shows when appropriate
-- [ ] "Clear filters" button works
-
-**Favorites (if implemented):**
-- [ ] Can click heart to favorite
-- [ ] Heart fills in (🤍 → ❤️)
-- [ ] Can unfavorite (❤️ → 🤍)
-- [ ] Favorites tab shows only favorites
-- [ ] Favorite count is accurate
-- [ ] Favorites persist on page refresh
-- [ ] Search/filter work in favorites tab
-
-**Responsive:**
-- [ ] Works on mobile (resize to ~400px)
-- [ ] Works on tablet (resize to ~800px)
-- [ ] Works on desktop (resize to ~1200px+)
-
-**Edge Cases:**
-- [ ] Empty search shows all users
-- [ ] Search for nonsense shows "no users found"
-- [ ] Can clear filters successfully
-- [ ] No console errors
+Add two buttons for All/Favorites and style them. Ensure the results count uses filteredUsers.
 
 ---
 
@@ -1110,3 +995,4 @@ After completing this tutorial:
 - Manage time ruthlessly
 
 **Now go practice and nail that interview! 🚀**
+
