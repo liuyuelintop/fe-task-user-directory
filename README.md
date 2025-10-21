@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# User Directory
+
+A small Next.js app that fetches a list of users, supports search and nationality filtering, and lets you favorite users with localStorage persistence.
+
+Key choices for stability:
+- `randomuser.me` requests use a fixed `seed` (`seed=user-directory`) for deterministic data.
+- `User.id` uses `login.uuid` from the API for a stable unique identifier.
+- React Query is tuned for fewer surprise refetches: `staleTime: 30 * 60 * 1000`, and both `refetchOnWindowFocus` and `refetchOnReconnect` are disabled.
+
+## Tech Stack
+- Next.js App Router (TypeScript, Tailwind)
+- React 19
+- @tanstack/react-query v5
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies and start the dev server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 to view the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
+- `npm run dev` – start dev server
+- `npm run build` – production build
+- `npm start` – start production server
+- `npm run lint` – run ESLint
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
+- `app/` – App Router entry, providers, layout
+- `components/` – UI components (`UserDirectory`, `UserCard`)
+- `hooks/` – `useUsers` (React Query), `useFavorites` (localStorage)
+- `lib/` – API fetch and mapping
+- `types/` – shared TypeScript types
+- `docs/` – tutorials and known issues
 
-## Learn More
+## Favorites & Data Consistency
+- Favorites are persisted in `localStorage` (client-only) as a list of user IDs.
+- The favorites badge and tab compute the intersection of stored IDs and the currently loaded users to avoid mismatches when the dataset changes.
+- See Known Issues for context and alternatives.
 
-To learn more about Next.js, take a look at the following resources:
+## Documentation
+- Tutorial: `docs/tutorials/SPEED_TUTORIAL.md`
+- Known issue write-up: `docs/known-issues/favorites-data-mismatch.md`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes
+- This repo favors clarity and speed for interview-style builds; production-hardening (validation, retries, accessibility) is outlined in the tutorial’s “Next steps”.
