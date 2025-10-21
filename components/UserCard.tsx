@@ -4,11 +4,23 @@ import { User } from '@/types';
 
 interface UserCardProps {
   user: User;
+  isFavorite?: boolean;
+  onToggleFavorite?: (userId: string) => void;
 }
 
-export function UserCard({ user }: UserCardProps) {
+export function UserCard({ user, isFavorite, onToggleFavorite }: UserCardProps) {
   return (
-    <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+    <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow relative">
+      {/* Favorite Button */}
+      {onToggleFavorite && (
+        <button
+          onClick={() => onToggleFavorite(user.id)}
+          className="absolute top-2 right-2 text-2xl hover:scale-110 transition-transform"
+          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          {isFavorite ? '❤️' : '🤍'}
+        </button>
+      )}
       {/* User Image */}
       <img
         src={user.picture.large}
@@ -35,4 +47,3 @@ export function UserCard({ user }: UserCardProps) {
     </div>
   );
 }
-
