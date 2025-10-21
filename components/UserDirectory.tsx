@@ -14,6 +14,13 @@ export function UserDirectory() {
   const { favoriteIds, toggleFavorite, isFavorite } = useFavorites();
   const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
 
+  // Compute visible favorites count as intersection with current users
+  const visibleFavoritesCount = useMemo(() => {
+    if (!users) return 0;
+    const visible = new Set(users.map(u => u.id));
+    return favoriteIds.filter(id => visible.has(id)).length;
+  }, [users, favoriteIds]);
+
   // Filter logic INLINE - don't extract to custom hook yet
   const filteredUsers = useMemo(() => {
     if (!users) return [];
@@ -91,7 +98,7 @@ export function UserDirectory() {
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Favorites ({favoriteIds.length})
+          Favorites ({visibleFavoritesCount})
         </button>
       </div>
 
