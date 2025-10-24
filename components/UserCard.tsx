@@ -1,6 +1,6 @@
 // components/UserCard.tsx
 
-import { User } from '@/types';
+import { User } from "@/types";
 
 interface UserCardProps {
   user: User;
@@ -8,7 +8,11 @@ interface UserCardProps {
   onToggleFavorite?: (userId: string) => void;
 }
 
-export function UserCard({ user, isFavorite, onToggleFavorite }: UserCardProps) {
+export function UserCard({
+  user,
+  isFavorite,
+  onToggleFavorite,
+}: UserCardProps) {
   return (
     <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow relative">
       {/* Favorite Button */}
@@ -16,9 +20,9 @@ export function UserCard({ user, isFavorite, onToggleFavorite }: UserCardProps) 
         <button
           onClick={() => onToggleFavorite(user.id)}
           className="absolute top-2 right-2 text-2xl hover:scale-110 transition-transform"
-          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
         >
-          {isFavorite ? '❤️' : '🤍'}
+          {isFavorite ? "❤️" : "🤍"}
         </button>
       )}
       {/* User Image */}

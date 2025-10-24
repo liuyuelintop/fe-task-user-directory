@@ -1,24 +1,24 @@
 // components/UserDirectory.tsx
 
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { useUsers } from '@/hooks/useUsers';
-import { UserCard } from './UserCard';
-import { useFavorites } from '@/hooks/useFavorites';
+import { useState, useMemo } from "react";
+import { useUsers } from "@/hooks/useUsers";
+import { UserCard } from "./UserCard";
+import { useFavorites } from "@/hooks/useFavorites";
 
 export function UserDirectory() {
   const { data: users, isLoading, isError } = useUsers();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedNationality, setSelectedNationality] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedNationality, setSelectedNationality] = useState("all");
   const { favoriteIds, toggleFavorite, isFavorite } = useFavorites();
-  const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
+  const [activeTab, setActiveTab] = useState<"all" | "favorites">("all");
 
   // Compute visible favorites count as intersection with current users
   const visibleFavoritesCount = useMemo(() => {
     if (!users) return 0;
-    const visible = new Set(users.map(u => u.id));
-    return favoriteIds.filter(id => visible.has(id)).length;
+    const visibleIds = new Set(users.map((user) => user.id));
+    return favoriteIds.filter((id) => visibleIds.has(id)).length;
   }, [users, favoriteIds]);
 
   // Filter logic INLINE - don't extract to custom hook yet
@@ -28,18 +28,18 @@ export function UserDirectory() {
     let result = users;
 
     // Filter by tab
-    if (activeTab === 'favorites') {
-      result = result.filter(user => favoriteIds.includes(user.id));
+    if (activeTab === "favorites") {
+      result = result.filter((user) => favoriteIds.includes(user.id));
     }
 
     // Filter by search and nationality
-    return result.filter(user => {
+    return result.filter((user) => {
       const matchesSearch = user.name.full
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
 
       const matchesNationality =
-        selectedNationality === 'all' ||
+        selectedNationality === "all" ||
         user.nationality === selectedNationality;
 
       return matchesSearch && matchesNationality;
@@ -49,7 +49,7 @@ export function UserDirectory() {
   // Get unique nationalities INLINE
   const nationalities = useMemo(() => {
     if (!users) return [];
-    const unique = [...new Set(users.map(u => u.nationality))];
+    const unique = [...new Set(users.map((u) => u.nationality))];
     return unique.sort();
   }, [users]);
 
@@ -81,21 +81,21 @@ export function UserDirectory() {
       {/* Tab Navigation */}
       <div className="mb-6 flex gap-4">
         <button
-          onClick={() => setActiveTab('all')}
+          onClick={() => setActiveTab("all")}
           className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'all'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            activeTab === "all"
+              ? "bg-blue-500 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
           All Users ({users?.length || 0})
         </button>
         <button
-          onClick={() => setActiveTab('favorites')}
+          onClick={() => setActiveTab("favorites")}
           className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'favorites'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            activeTab === "favorites"
+              ? "bg-blue-500 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
           Favorites ({visibleFavoritesCount})
@@ -120,7 +120,7 @@ export function UserDirectory() {
           className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="all">All Nationalities</option>
-          {nationalities.map(nat => (
+          {nationalities.map((nat) => (
             <option key={nat} value={nat}>
               {nat.toUpperCase()}
             </option>
@@ -135,7 +135,7 @@ export function UserDirectory() {
 
       {/* User Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredUsers.map(user => (
+        {filteredUsers.map((user) => (
           <UserCard
             key={user.id}
             user={user}
@@ -149,18 +149,18 @@ export function UserDirectory() {
       {filteredUsers.length === 0 && (
         <div className="text-center py-12">
           <p className="text-xl text-gray-600 mb-2">
-            {activeTab === 'favorites' ? 'No favorites yet' : 'No users found'}
+            {activeTab === "favorites" ? "No favorites yet" : "No users found"}
           </p>
           <p className="text-gray-500">
-            {activeTab === 'favorites'
-              ? 'Click the heart icon on user cards to add favorites'
-              : 'Try adjusting your search or filter criteria'}
+            {activeTab === "favorites"
+              ? "Click the heart icon on user cards to add favorites"
+              : "Try adjusting your search or filter criteria"}
           </p>
-          {activeTab === 'all' && (
+          {activeTab === "all" && (
             <button
               onClick={() => {
-                setSearchTerm('');
-                setSelectedNationality('all');
+                setSearchTerm("");
+                setSelectedNationality("all");
               }}
               className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >

@@ -43,7 +43,7 @@ Open http://localhost:3000 to view the app.
 - See Known Issues for context and alternatives.
 
 ## Documentation
-- Tutorial: `docs/tutorials/SPEED_TUTORIAL.md`
+- Tutorials overview: `docs/tutorials/README.md`
 - Known issue write-up: `docs/known-issues/favorites-data-mismatch.md`
 
 ## Notes
