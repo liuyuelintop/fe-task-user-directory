@@ -11,3 +11,17 @@ export interface User {
     };
     nationality: string;
   }
+
+export interface UserSearchMeta {
+  total: number;
+  totalAll: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+  nationalities: string[];
+}
+
+export interface UserSearchResponse {
+  data: User[];
+  meta: UserSearchMeta;
+}

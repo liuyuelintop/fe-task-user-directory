@@ -40,22 +40,25 @@ import { getMockUsers } from '@/lib/mockUserStore';
 const DEFAULT_PAGE_SIZE = 20;
 
 export async function GET(request: NextRequest) {
-  await wait(200); // simulate network latency
+  await wait(200);
 
-  const { search, nationality, page, pageSize } = parseParams(request);
+  const params = parseParams(request);
   const dataset = await getMockUsers();
-  const filtered = filterUsers(dataset, { search, nationality });
+  const nationalities = extractNationalities(dataset);
+  const filtered = filterUsers(dataset, params);
 
-  const start = (page - 1) * pageSize;
-  const results = filtered.slice(start, start + pageSize);
+  const start = (params.page - 1) * params.pageSize;
+  const results = filtered.slice(start, start + params.pageSize);
 
   return Response.json({
     data: results,
     meta: {
       total: filtered.length,
-      page,
-      pageSize,
-      hasMore: start + pageSize < filtered.length,
+      totalAll: dataset.length,
+      page: params.page,
+      pageSize: params.pageSize,
+      hasMore: start + params.pageSize < filtered.length,
+      nationalities,
     },
   });
 }
@@ -63,18 +66,28 @@ export async function GET(request: NextRequest) {
 function parseParams(request: NextRequest) {
   const search = request.nextUrl.searchParams.get('q')?.trim().toLowerCase() ?? '';
   const nationality = request.nextUrl.searchParams.get('nationality')?.toUpperCase() ?? 'ALL';
-  const page = Number(request.nextUrl.searchParams.get('page') ?? '1');
-  const pageSize = Number(request.nextUrl.searchParams.get('pageSize') ?? String(DEFAULT_PAGE_SIZE));
+  const page = Math.max(Number(request.nextUrl.searchParams.get('page') ?? '1'), 1);
+  const pageSize = Math.max(
+    Number(request.nextUrl.searchParams.get('pageSize') ?? String(DEFAULT_PAGE_SIZE)),
+    1,
+  );
+
   return { search, nationality, page, pageSize };
 }
 
 function filterUsers(users: User[], params: { search: string; nationality: string }) {
   return users.filter(user => {
-    const matchesSearch = !params.search || user.name.full.toLowerCase().includes(params.search);
+    const matchesSearch =
+      params.search.length === 0 || user.name.full.toLowerCase().includes(params.search);
     const matchesNationality =
       params.nationality === 'ALL' || user.nationality.toUpperCase() === params.nationality;
+
     return matchesSearch && matchesNationality;
   });
+}
+
+function extractNationalities(users: User[]) {
+  return Array.from(new Set(users.map(user => user.nationality))).sort();
 }
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -82,7 +95,7 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 **Key points**
 - Input parsing lives in helpers to keep the route readable.
-- The response mirrors a production contract (`data` + `meta` block), making the front end future-proof.
+- The response mirrors a production contract (`data` + `meta` block) and surfaces helpful metadata (`totalAll`, `nationalities`, pagination hints) for the UI.
 - Latency simulation (`wait`) mimics real-world lag during demos/tests.
 
 ---
@@ -149,47 +162,49 @@ This hook simply mirrors the latest value after 250 ms of inactivity; you can 
 
 ```ts
 import { useQuery } from '@tanstack/react-query';
-import { useDebounce } from '@/hooks/useDebounce'; // simple 250ms debounce util
+import { useDebounce } from '@/hooks/useDebounce';
+import { UserSearchResponse } from '@/types';
 
 interface UserSearchParams {
   q: string;
   nationality: string;
   page: number;
+  pageSize?: number;
 }
 
-interface SearchResponse {
-  data: User[];
-  meta: {
-    total: number;
-    page: number;
-    pageSize: number;
-    hasMore: boolean;
-  };
-}
+const DEFAULT_PAGE_SIZE = 50;
 
-export function useUserSearch({ q, nationality, page }: UserSearchParams) {
-  const debounced = useDebounce({ q, nationality, page }, 250);
+export function useUserSearch({ q, nationality, page, pageSize = DEFAULT_PAGE_SIZE }: UserSearchParams) {
+  const debounced = useDebounce(
+    {
+      q: q ?? '',
+      nationality: (nationality ?? 'ALL').toUpperCase(),
+      page,
+      pageSize,
+    },
+    250,
+  );
 
   return useQuery({
     queryKey: ['user-search', debounced],
     queryFn: async ({ signal }) => {
       const params = new URLSearchParams({
-        q: debounced.q ?? '',
-        nationality: debounced.nationality ?? 'ALL',
-        page: String(debounced.page ?? 1),
-        pageSize: '20',
+        q: debounced.q,
+        nationality: debounced.nationality,
+        page: String(debounced.page),
+        pageSize: String(debounced.pageSize),
       });
 
       const response = await fetch(`/api/users/search?${params.toString()}`, { signal });
+
       if (!response.ok) {
         throw new Error(`Search failed with status ${response.status}`);
       }
 
-      return (await response.json()) as SearchResponse;
+      return (await response.json()) as UserSearchResponse;
     },
     keepPreviousData: true,
     staleTime: 60_000,
-    enabled: Boolean(debounced.q.trim()) || debounced.nationality !== 'ALL',
   });
 }
 ```
@@ -200,7 +215,6 @@ export function useUserSearch({ q, nationality, page }: UserSearchParams) {
 - `queryFn`: Actual fetch. React Query injects an `AbortSignal` (`signal`) so if the component unmounts or inputs change mid-request, the fetch is cancelled cleanly.
 - `keepPreviousData: true`: While new results load (e.g., page changes), continue showing the previous data to avoid UI flicker.
 - `staleTime: 60_000`: Treat results as fresh for 60 seconds; prevents re-fetching on focus or remount during that window.
-- `enabled`: Skip hitting the API until the user has typed something or chosen a specific nationality—saving unnecessary requests.
 
 > **Tip:** Adjust `pageSize` or add additional params (e.g., sort) as your UI grows; just make sure to include them in both the URL and the `queryKey`.
 
@@ -232,12 +246,15 @@ const { data, isLoading, isError } = useUserSearch({
 });
 
 const users = data?.data ?? [];
-const total = data?.meta.total ?? 0;
+const totalMatching = data?.meta.total ?? 0;
+const totalAll = data?.meta.totalAll ?? 0;
+const nationalities = data?.meta.nationalities ?? [];
 const hasMore = data?.meta.hasMore ?? false;
 ```
 
 4. **Update derived UI pieces**  
-   - The “results count” line should use `total` instead of `users.length` so it reflects the full dataset size.  
+   - The “results count” line should use `totalMatching` and optionally include the overall dataset size (`totalAll`).  
+   - Populate the nationality `<select>` from `nationalities` so the options stay in sync with the dataset.  
    - If you add pagination controls, use `page`, `setPage`, and `hasMore` to enable/disable next/previous buttons.
 
 5. **Remove client-side filter memo**  

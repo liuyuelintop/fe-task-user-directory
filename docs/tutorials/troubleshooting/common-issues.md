@@ -66,3 +66,19 @@
 
 - Architecture notes and trade-offs: [Interview Q&A](../interview/qa.md#q12-how-do-you-handle-the-favorites-data-mismatch-issue).  
 - Full bug write-up: `docs/known-issues/favorites-data-mismatch.md`.
+
+## Issue: Search input loses focus while typing
+
+**Symptoms:** Typing into the search bar briefly blanks the page with “Loading users…” and the input loses focus, forcing you to click again for every character.
+
+**Root cause:** Each keystroke triggered a brand-new React Query key (`['user-search', params]`). Before the new request finished, the component saw `isLoading === true` and rendered the full-screen loading state. That unmounted the input, so when results arrived the browser rebuilt the field without focus. The debounce itself wasn’t at fault—the stale data vanished between requests.
+
+**Fix:**
+- Keep previous results visible during fetches by setting `placeholderData: (prev) => prev` (React Query v5) so the data isn’t torn down between searches.
+- Track whether initial data has landed (`hasInitialData`) and only show the full-screen loading view before that first payload. Subsequent refetches now show a subtle “Updating results…” inline message instead of wiping the UI.
+- Optional: debounce inputs (250 ms) to avoid excessive requests, but the real fix is persisting UI state across refetches.
+
+### Related reading
+
+- Implementation details: see the “Client Hook” and “UI Integration” sections in [Mock Search API](../reference/mock-search-api.md).
+- React Query docs on [placeholder data](https://tanstack.com/query/latest/docs/framework/react/guides/placeholder-data).
